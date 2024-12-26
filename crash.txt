@@ -1,111 +1,95 @@
-    from .helpers import get_debug_flag
+    else engine.raw_connection()
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/helpers.py", line 16, in <module>
+         ^^^^^^^^^^^^^^^^^^^^^^^
 
-    from werkzeug.urls import url_quote
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3245, in raw_connection
 
-ImportError: cannot import name 'url_quote' from 'werkzeug.urls' (/opt/venv/lib/python3.11/site-packages/werkzeug/urls.py)
+    return self._wrap_pool_connect(self.pool.connect, _connection)
 
-[2024-12-26 12:29:08 +0000] [4] [INFO] Worker exiting (pid: 4)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[2024-12-26 12:29:08 +0000] [1] [INFO] Shutting down: Master
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3215, in _wrap_pool_connect
 
-[2024-12-26 12:29:08 +0000] [1] [INFO] Reason: Worker failed to boot.
+    Connection._handle_dbapi_exception_noconnection(
 
-[2024-12-26 12:29:09 +0000] [1] [INFO] Starting gunicorn 20.1.0
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2069, in _handle_dbapi_exception_noconnection
 
-[2024-12-26 12:29:09 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
+    util.raise_(
 
-[2024-12-26 12:29:09 +0000] [1] [INFO] Using worker: sync
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
 
-[2024-12-26 12:29:09 +0000] [4] [INFO] Booting worker with pid: 4
+    raise exception
 
-[2024-12-26 12:29:09 +0000] [4] [ERROR] Exception in worker process
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3212, in _wrap_pool_connect
 
-Traceback (most recent call last):
+    return fn()
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 589, in spawn_worker
+           ^^^^
 
-    worker.init_process()
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 307, in connect
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 134, in init_process
+    return _ConnectionFairy._checkout(self)
 
-    self.load_wsgi()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 146, in load_wsgi
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 767, in _checkout
 
-    self.wsgi = self.app.wsgi()
+    fairy = _ConnectionRecord.checkout(pool)
 
-                ^^^^^^^^^^^^^^^
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 67, in wsgi
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 425, in checkout
 
-    self.callable = self.load()
+    rec = pool._do_get()
 
-                    ^^^^^^^^^^^
+          ^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 58, in load
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 256, in _do_get
 
-    return self.load_wsgiapp()
+    return self._create_connection()
 
-           ^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 253, in _create_connection
 
-    return util.import_app(self.app_uri)
+    return _ConnectionRecord(self)
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/gunicorn/util.py", line 359, in import_app
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 368, in __init__
 
-    mod = importlib.import_module(module)
+    self.__connect()
 
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 610, in __connect
 
-  File "/root/.nix-profile/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    with util.safe_reraise():
 
-    return _bootstrap._gcd_import(name[level:], package, level)
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 70, in __exit__
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    compat.raise_(
 
-  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
 
-  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+    raise exception
 
-  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 605, in __connect
 
-  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+    connection = pool._invoke_creator(self)
 
-  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 578, in connect
 
-  File "/app/app.py", line 2, in <module>
+    return dialect.connect(*cargs, **cparams)
 
-    from flask import Flask, render_template, request, jsonify
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/__init__.py", line 7, in <module>
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 584, in connect
 
-    from .app import Flask as Flask
+    return self.dbapi.connect(*cargs, **cparams)
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 28, in <module>
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    from . import cli
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/cli.py", line 18, in <module>
-
-    from .helpers import get_debug_flag
-
-  File "/opt/venv/lib/python3.11/site-packages/flask/helpers.py", line 16, in <module>
-
-    from werkzeug.urls import url_quote
-
-ImportError: cannot import name 'url_quote' from 'werkzeug.urls' (/opt/venv/lib/python3.11/site-packages/werkzeug/urls.py)
-
-[2024-12-26 12:29:09 +0000] [4] [INFO] Worker exiting (pid: 4)
-
-[2024-12-26 12:29:10 +0000] [1] [INFO] Shutting down: Master
-
-[2024-12-26 12:29:10 +0000] [1] [INFO] Reason: Worker failed to boot.
-
-Stopping Container
+(Background on this error at: https://sqlalche.me/e/14/e3q8)
