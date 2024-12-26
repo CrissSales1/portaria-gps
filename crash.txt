@@ -1,3 +1,71 @@
+
+
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 578, in connect
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    return dialect.connect(*cargs, **cparams)
+
+  File "/app/app.py", line 161, in get_recent_records
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    records = db.session.query(Record, Vehicle).join(Vehicle).order_by(Record.timestamp.desc()).limit(10).all()
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 584, in connect
+
+    return self.dbapi.connect(*cargs, **cparams)
+
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2711, in all
+
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
+
+(Background on this error at: https://sqlalche.me/e/14/e3q8)
+
+    return self._iter().all()
+
+           ^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2846, in _iter
+
+    result = self.session.execute(
+
+             ^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1688, in execute
+
+    conn = self._connection_for_bind(bind)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1529, in _connection_for_bind
+
+    return self._transaction._connection_for_bind(
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 747, in _connection_for_bind
+
+    conn = bind.connect()
+
+           ^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3166, in connect
+
+    return self._connection_cls(self, close_with_result=close_with_result)
+
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 96, in __init__
+
     else engine.raw_connection()
 
          ^^^^^^^^^^^^^^^^^^^^^^^
@@ -8,17 +76,9 @@
 
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3215, in _wrap_pool_connect
+[2024-12-26 12:59:04,551] ERROR in app: Exception on /api/recent-records [GET]
 
-    Connection._handle_dbapi_exception_noconnection(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2069, in _handle_dbapi_exception_noconnection
-
-    util.raise_(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
-
-    raise exception
+Traceback (most recent call last):
 
   File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3212, in _wrap_pool_connect
 
@@ -51,45 +111,3 @@
            ^^^^^^^^^^^^^^^^^^^^^^^^^
 
   File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 253, in _create_connection
-
-    return _ConnectionRecord(self)
-
-           ^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 368, in __init__
-
-    self.__connect()
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 610, in __connect
-
-    with util.safe_reraise():
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 70, in __exit__
-
-    compat.raise_(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
-
-    raise exception
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 605, in __connect
-
-    connection = pool._invoke_creator(self)
-
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 578, in connect
-
-    return dialect.connect(*cargs, **cparams)
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 584, in connect
-
-    return self.dbapi.connect(*cargs, **cparams)
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
-
-(Background on this error at: https://sqlalche.me/e/14/e3q8)

@@ -7,15 +7,17 @@ import pytz
 app = Flask(__name__)
 
 # Configuração do banco de dados
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    # Local development
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/parking.db'
-else:
-    # Railway - PostgreSQL
+if 'RAILWAY_ENVIRONMENT' in os.environ:
+    # Estamos no Railway, usar PostgreSQL
+    DATABASE_URL = os.environ.get('DATABASE_URL')
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+    print("Using PostgreSQL:", DATABASE_URL)
+else:
+    # Desenvolvimento local, usar SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/parking.db'
+    print("Using SQLite")
 
 # Outras configurações
 app.config.update(
