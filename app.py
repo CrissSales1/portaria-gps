@@ -55,22 +55,9 @@ class Vehicle(db.Model):
 class Record(db.Model):
     __tablename__ = 'record'
     id = db.Column(db.Integer, primary_key=True)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id', ondelete='CASCADE'), nullable=False)
     record_type = db.Column(db.String(20))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-# Cria as tabelas se não existirem
-with app.app_context():
-    print("Criando tabelas no banco de dados...")
-    try:
-        db.create_all()
-        print("Tabelas criadas com sucesso!")
-        # Lista as tabelas criadas
-        tables = db.engine.table_names()
-        print("Tabelas existentes:", tables)
-    except Exception as e:
-        print("Erro ao criar tabelas:", str(e))
-        raise
 
 # Routes
 @app.route('/')
