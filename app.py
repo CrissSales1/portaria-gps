@@ -28,8 +28,12 @@ app.config.update(
 # Inicializa o SQLAlchemy
 db = SQLAlchemy(app)
 
-# Configuração do fuso horário de Brasília
+# Configuração do fuso horário
 TIMEZONE = pytz.timezone('America/Sao_Paulo')
+
+def get_current_time():
+    """Retorna o horário atual no fuso horário correto"""
+    return datetime.now(TIMEZONE).replace(tzinfo=None)
 
 # Models
 class Vehicle(db.Model):
@@ -39,7 +43,7 @@ class Vehicle(db.Model):
     name = db.Column(db.String(100), nullable=False)
     sector = db.Column(db.String(50))
     vehicle_type = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_current_time)
     records = db.relationship('Record', backref='vehicle', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
@@ -57,7 +61,7 @@ class Record(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id', ondelete='CASCADE'), nullable=False)
     record_type = db.Column(db.String(20))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=get_current_time)
 
 # Routes
 @app.route('/')
@@ -91,7 +95,7 @@ def add_vehicle():
         if existing_vehicle:
             return jsonify({'error': 'Já existe um veículo com essa placa'}), 400
 
-        # Cria o novo veículo (sem especificar o ID)
+        # Cria o novo veículo
         vehicle = Vehicle(
             plate=plate,
             name=name,
@@ -102,8 +106,12 @@ def add_vehicle():
         db.session.add(vehicle)
         db.session.commit()
 
-        # Cria um registro de entrada
-        record = Record(vehicle_id=vehicle.id, record_type='ENTRADA')
+        # Cria um registro de entrada com o horário local
+        record = Record(
+            vehicle_id=vehicle.id, 
+            record_type='ENTRADA',
+            timestamp=get_current_time()
+        )
         db.session.add(record)
         db.session.commit()
 
@@ -143,45 +151,84 @@ def delete_vehicle(vehicle_id):
 
 @app.route('/api/records', methods=['POST'])
 def add_record():
-    data = request.get_json()
-    plate = data.get('plate', '').strip().upper()  # Converte para maiúsculas
-    record_type = data.get('record_type', '').strip()
-    vehicle = Vehicle.query.filter_by(plate=plate).first()
-    if not vehicle:
-        return jsonify({'error': 'Vehicle not found'}), 404
-    
-    # Usar horário de Brasília ao criar novo registro
-    now = datetime.now(TIMEZONE).replace(tzinfo=None)
-    record = Record(
-        vehicle_id=vehicle.id,
-        record_type=record_type,
-        timestamp=now
-    )
-    db.session.add(record)
-    db.session.commit()
-    return jsonify({'message': 'Record added successfully'})
+    try:
+        data = request.json
+        plate = data.get('plate', '').strip().upper()
+        record_type = data.get('type', '').strip().upper()
 
-@app.route('/api/vehicles/search')
-def search_vehicles():
-    query = request.args.get('q', '').upper()
-    if not query:
-        return jsonify([])
+        if not plate or not record_type:
+            return jsonify({'error': 'Placa e tipo são obrigatórios'}), 400
 
-    vehicles = Vehicle.query.filter(
-        db.or_(
-            Vehicle.plate.ilike(f'%{query}%'),
-            Vehicle.name.ilike(f'%{query}%'),
-            Vehicle.sector.ilike(f'%{query}%')
+        vehicle = Vehicle.query.filter_by(plate=plate).first()
+        if not vehicle:
+            return jsonify({'error': 'Veículo não encontrado'}), 404
+
+        record = Record(
+            vehicle_id=vehicle.id,
+            record_type=record_type,
+            timestamp=get_current_time()  # Usa o horário local
         )
-    ).all()
+        db.session.add(record)
+        db.session.commit()
 
-    return jsonify([{
-        'id': v.id,
-        'name': v.name,
-        'plate': v.plate,
-        'sector': v.sector,
-        'vehicle_type': v.vehicle_type
-    } for v in vehicles])
+        return jsonify({'message': 'Registro adicionado com sucesso'}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao adicionar registro: {str(e)}")
+        return jsonify({'error': 'Erro ao adicionar registro'}), 500
+
+@app.route('/api/records', methods=['GET'])
+def get_records():
+    try:
+        # Parâmetros de filtro
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        record_type = request.args.get('type')
+        plate = request.args.get('plate', '').strip().upper()
+
+        # Query base
+        query = db.session.query(Record, Vehicle).join(Vehicle)
+
+        # Aplica filtros
+        if start_date:
+            start = datetime.strptime(start_date, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+            query = query.filter(Record.timestamp >= start)
+
+        if end_date:
+            end = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(Record.timestamp <= end)
+
+        if record_type and record_type.upper() in ['ENTRADA', 'SAIDA']:
+            query = query.filter(Record.record_type == record_type.upper())
+
+        if plate:
+            query = query.filter(Vehicle.plate == plate)
+
+        # Ordena por timestamp decrescente
+        records = query.order_by(Record.timestamp.desc()).all()
+
+        # Formata a resposta
+        result = []
+        for record, vehicle in records:
+            result.append({
+                'id': record.id,
+                'timestamp': record.timestamp,
+                'record_type': record.record_type,
+                'vehicle': {
+                    'id': vehicle.id,
+                    'plate': vehicle.plate,
+                    'name': vehicle.name,
+                    'sector': vehicle.sector,
+                    'vehicle_type': vehicle.vehicle_type
+                }
+            })
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"Erro ao buscar registros: {str(e)}")
+        return jsonify({'error': 'Erro ao buscar registros'}), 500
 
 @app.route('/api/recent-records')
 def get_recent_records():
@@ -236,6 +283,28 @@ def get_reports():
         'name': record.Vehicle.name,
         'sector': record.Vehicle.sector
     } for record in records])
+
+@app.route('/api/search-vehicles')
+def search_vehicles():
+    query = request.args.get('q', '').upper()
+    if not query:
+        return jsonify([])
+
+    vehicles = Vehicle.query.filter(
+        db.or_(
+            Vehicle.plate.ilike(f'%{query}%'),
+            Vehicle.name.ilike(f'%{query}%'),
+            Vehicle.sector.ilike(f'%{query}%')
+        )
+    ).all()
+
+    return jsonify([{
+        'id': v.id,
+        'name': v.name,
+        'plate': v.plate,
+        'sector': v.sector,
+        'vehicle_type': v.vehicle_type
+    } for v in vehicles])
 
 if __name__ == '__main__':
     # Em desenvolvimento, use debug=True
