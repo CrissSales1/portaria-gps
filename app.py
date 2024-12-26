@@ -75,21 +75,44 @@ def get_vehicles():
 
 @app.route('/api/vehicles', methods=['POST'])
 def add_vehicle():
-    data = request.get_json()
-    plate = data.get('plate', '').strip().upper()
-    name = data.get('name', '').strip().upper()
-    sector = data.get('sector', '').strip().upper()
-    vehicle_type = data.get('vehicle_type', '').strip().upper()
+    try:
+        data = request.json
+        plate = data.get('plate', '').strip().upper()
+        name = data.get('name', '').strip().upper()
+        sector = data.get('sector', '').strip().upper()
+        vehicle_type = data.get('vehicle_type', '').strip().upper()
 
-    vehicle = Vehicle(
-        name=name,
-        plate=plate,
-        sector=sector,
-        vehicle_type=vehicle_type
-    )
-    db.session.add(vehicle)
-    db.session.commit()
-    return jsonify(vehicle.to_dict())
+        # Validações
+        if not plate or not name:
+            return jsonify({'error': 'Placa e nome são obrigatórios'}), 400
+
+        # Verifica se já existe um veículo com essa placa
+        existing_vehicle = Vehicle.query.filter_by(plate=plate).first()
+        if existing_vehicle:
+            return jsonify({'error': 'Já existe um veículo com essa placa'}), 400
+
+        # Cria o novo veículo (sem especificar o ID)
+        vehicle = Vehicle(
+            plate=plate,
+            name=name,
+            sector=sector,
+            vehicle_type=vehicle_type
+        )
+
+        db.session.add(vehicle)
+        db.session.commit()
+
+        # Cria um registro de entrada
+        record = Record(vehicle_id=vehicle.id, record_type='ENTRADA')
+        db.session.add(record)
+        db.session.commit()
+
+        return jsonify(vehicle.to_dict()), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao adicionar veículo: {str(e)}")
+        return jsonify({'error': 'Erro ao adicionar veículo'}), 500
 
 @app.route('/api/vehicles/<int:id>', methods=['PUT'])
 def update_vehicle(id):
