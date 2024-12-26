@@ -7,23 +7,22 @@ import pytz
 app = Flask(__name__)
 
 # Configuração do banco de dados
-if 'RAILWAY_ENVIRONMENT' in os.environ:
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
     # Estamos no Railway, usar PostgreSQL
-    DATABASE_URL = os.environ.get('DATABASE_URL')
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-    print("Using PostgreSQL:", DATABASE_URL)
+    print(f"Configurando PostgreSQL: {DATABASE_URL}")
 else:
     # Desenvolvimento local, usar SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/parking.db'
-    print("Using SQLite")
+    DATABASE_URL = 'sqlite:///instance/parking.db'
+    print("Configurando SQLite")
 
-# Outras configurações
+# Configuração do Flask
 app.config.update(
-    SECRET_KEY=os.environ.get('SECRET_KEY', os.urandom(24).hex()),
+    SQLALCHEMY_DATABASE_URI=DATABASE_URL,
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    JSON_SORT_KEYS=False
+    SECRET_KEY=os.environ.get('SECRET_KEY', os.urandom(24).hex())
 )
 
 # Inicializa o SQLAlchemy
@@ -34,26 +33,29 @@ TIMEZONE = pytz.timezone('America/Sao_Paulo')
 
 # Models
 class Vehicle(db.Model):
+    __tablename__ = 'vehicle'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
     plate = db.Column(db.String(20), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     sector = db.Column(db.String(50))
-    vehicle_type = db.Column(db.String(20))  # 'carro' or 'moto'
+    vehicle_type = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
             'id': self.id,
-            'name': self.name,
             'plate': self.plate,
+            'name': self.name,
             'sector': self.sector,
-            'vehicle_type': self.vehicle_type
+            'vehicle_type': self.vehicle_type,
+            'created_at': self.created_at
         }
 
 class Record(db.Model):
+    __tablename__ = 'record'
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
-    record_type = db.Column(db.String(20))  # 'entrada' or 'saída'
+    record_type = db.Column(db.String(20))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     vehicle = db.relationship('Vehicle', backref=db.backref('records', lazy=True))
 

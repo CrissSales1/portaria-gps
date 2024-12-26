@@ -1,34 +1,16 @@
-
-
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1499, in dispatch_request
 
     return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 578, in connect
-
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    return dialect.connect(*cargs, **cparams)
+  File "/app/app.py", line 204, in get_reports
 
-  File "/app/app.py", line 161, in get_recent_records
+    records = query.order_by(Record.timestamp.desc()).all()
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    records = db.session.query(Record, Vehicle).join(Vehicle).order_by(Record.timestamp.desc()).limit(10).all()
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 584, in connect
-
-    return self.dbapi.connect(*cargs, **cparams)
-
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2711, in all
-
-sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
-
-(Background on this error at: https://sqlalche.me/e/14/e3q8)
 
     return self._iter().all()
 
@@ -40,74 +22,64 @@ sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open datab
 
              ^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1688, in execute
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1689, in execute
 
-    conn = self._connection_for_bind(bind)
+    result = conn._execute_20(statement, params or {}, execution_options)
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1529, in _connection_for_bind
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1583, in _execute_20
 
-    return self._transaction._connection_for_bind(
+    return meth(self, args_10style, kwargs_10style, execution_options)
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 747, in _connection_for_bind
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 323, in _execute_on_connection
 
-    conn = bind.connect()
+    return connection._execute_clauseelement(
 
-           ^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3166, in connect
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1452, in _execute_clauseelement
 
-    return self._connection_cls(self, close_with_result=close_with_result)
+    ret = self._execute_context(
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          ^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 96, in __init__
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1814, in _execute_context
 
-    else engine.raw_connection()
+    self._handle_dbapi_exception(
 
-         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1995, in _handle_dbapi_exception
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3245, in raw_connection
+    util.raise_(
 
-    return self._wrap_pool_connect(self.pool.connect, _connection)
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    raise exception
 
-[2024-12-26 12:59:04,551] ERROR in app: Exception on /api/recent-records [GET]
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1771, in _execute_context
 
-Traceback (most recent call last):
+    self.dialect.do_execute(
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3212, in _wrap_pool_connect
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 717, in do_execute
 
-    return fn()
+    cursor.execute(statement, parameters)
 
-           ^^^^
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "record" does not exist
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 307, in connect
+LINE 2: FROM record JOIN vehicle ON vehicle.id = record.vehicle_id 
 
-    return _ConnectionFairy._checkout(self)
+             ^
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 767, in _checkout
+[SQL: SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
 
-    fairy = _ConnectionRecord.checkout(pool)
+FROM record JOIN vehicle ON vehicle.id = record.vehicle_id 
 
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WHERE record.timestamp >= %(timestamp_1)s AND record.timestamp < %(timestamp_2)s ORDER BY record.timestamp DESC]
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 425, in checkout
+[parameters: {'timestamp_1': datetime.datetime(2024, 12, 1, 0, 0, tzinfo=<DstTzInfo 'America/Sao_Paulo' -03-1 day, 21:00:00 STD>), 'timestamp_2': datetime.datetime(2024, 12, 27, 0, 0, tzinfo=<DstTzInfo 'America/Sao_Paulo' -03-1 day, 21:00:00 STD>)}]
 
-    rec = pool._do_get()
-
-          ^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 256, in _do_get
-
-    return self._create_connection()
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 253, in _create_connection
+(Background on this error at: https://sqlalche.me/e/14/f405)
