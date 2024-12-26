@@ -1,14 +1,72 @@
+Starting Container
+
+[2024-12-26 13:13:15 +0000] [1] [INFO] Starting gunicorn 20.1.0
+
+[2024-12-26 13:13:15 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
+
+[2024-12-26 13:13:15 +0000] [1] [INFO] Using worker: sync
+
+[2024-12-26 13:13:15 +0000] [4] [INFO] Booting worker with pid: 4
+
+Configurando PostgreSQL: postgresql://postgres:xlyrMBRFPdTjeMRtzxJyDIlQEwNPIDfJ@postgres.railway.internal:5432/railway
+
+[2024-12-26 13:13:52,969] ERROR in app: Exception on /api/recent-records [GET]
+
+Traceback (most recent call last):
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1771, in _execute_context
+
+    self.dialect.do_execute(
+
+  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 717, in do_execute
+
+    cursor.execute(statement, parameters)
+
+psycopg2.errors.UndefinedTable: relation "record" does not exist
+
+LINE 2: FROM record JOIN vehicle ON vehicle.id = record.vehicle_id O...
+
+             ^
+
+ 
+
+ 
+
+The above exception was the direct cause of the following exception:
+
+ 
+
+Traceback (most recent call last):
+
+  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 2070, in wsgi_app
+
+    response = self.full_dispatch_request()
+
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1515, in full_dispatch_request
+
+    rv = self.handle_user_exception(e)
+
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1513, in full_dispatch_request
+
+    rv = self.dispatch_request()
+
+         ^^^^^^^^^^^^^^^^^^^^^^^
+
   File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1499, in dispatch_request
 
     return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
 
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  File "/app/app.py", line 204, in get_reports
+  File "/app/app.py", line 165, in get_recent_records
 
-    records = query.order_by(Record.timestamp.desc()).all()
+    records = db.session.query(Record, Vehicle).join(Vehicle).order_by(Record.timestamp.desc()).limit(10).all()
 
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2711, in all
 
@@ -29,57 +87,3 @@
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1583, in _execute_20
-
-    return meth(self, args_10style, kwargs_10style, execution_options)
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 323, in _execute_on_connection
-
-    return connection._execute_clauseelement(
-
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1452, in _execute_clauseelement
-
-    ret = self._execute_context(
-
-          ^^^^^^^^^^^^^^^^^^^^^^
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1814, in _execute_context
-
-    self._handle_dbapi_exception(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1995, in _handle_dbapi_exception
-
-    util.raise_(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/util/compat.py", line 207, in raise_
-
-    raise exception
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1771, in _execute_context
-
-    self.dialect.do_execute(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 717, in do_execute
-
-    cursor.execute(statement, parameters)
-
-sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "record" does not exist
-
-LINE 2: FROM record JOIN vehicle ON vehicle.id = record.vehicle_id 
-
-             ^
-
- 
-
-[SQL: SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
-
-FROM record JOIN vehicle ON vehicle.id = record.vehicle_id 
-
-WHERE record.timestamp >= %(timestamp_1)s AND record.timestamp < %(timestamp_2)s ORDER BY record.timestamp DESC]
-
-[parameters: {'timestamp_1': datetime.datetime(2024, 12, 1, 0, 0, tzinfo=<DstTzInfo 'America/Sao_Paulo' -03-1 day, 21:00:00 STD>), 'timestamp_2': datetime.datetime(2024, 12, 27, 0, 0, tzinfo=<DstTzInfo 'America/Sao_Paulo' -03-1 day, 21:00:00 STD>)}]
-
-(Background on this error at: https://sqlalche.me/e/14/f405)

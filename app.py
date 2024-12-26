@@ -40,6 +40,7 @@ class Vehicle(db.Model):
     sector = db.Column(db.String(50))
     vehicle_type = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    records = db.relationship('Record', backref='vehicle', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
         return {
@@ -57,7 +58,19 @@ class Record(db.Model):
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
     record_type = db.Column(db.String(20))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    vehicle = db.relationship('Vehicle', backref=db.backref('records', lazy=True))
+
+# Cria as tabelas se não existirem
+with app.app_context():
+    print("Criando tabelas no banco de dados...")
+    try:
+        db.create_all()
+        print("Tabelas criadas com sucesso!")
+        # Lista as tabelas criadas
+        tables = db.engine.table_names()
+        print("Tabelas existentes:", tables)
+    except Exception as e:
+        print("Erro ao criar tabelas:", str(e))
+        raise
 
 # Routes
 @app.route('/')
@@ -215,10 +228,6 @@ def get_reports():
     } for record in records])
 
 if __name__ == '__main__':
-    # Cria as tabelas do banco de dados se não existirem
-    with app.app_context():
-        db.create_all()
-    
     # Em desenvolvimento, use debug=True
     if os.environ.get('FLASK_ENV') == 'development':
         app.run(debug=True)
