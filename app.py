@@ -5,20 +5,22 @@ from datetime import datetime, timedelta
 import pytz
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # Configuração do banco de dados
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
     # Railway usa PostgreSQL, então precisamos ajustar a URL
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-else:
-    # SQLite para desenvolvimento local
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configuração do Flask
+app.config.update(
+    SECRET_KEY=os.environ.get('SECRET_KEY', os.urandom(24).hex()),
+    SQLALCHEMY_DATABASE_URI=DATABASE_URL if DATABASE_URL else 'sqlite:///instance/parking.db',
+    SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    JSON_SORT_KEYS=False
+)
 
+# Inicializa o SQLAlchemy
 db = SQLAlchemy(app)
 
 # Configuração do fuso horário de Brasília
