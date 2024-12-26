@@ -1,89 +1,63 @@
+Mounting volume on: /var/lib/containers/railwayapp/bind-mounts/3c68aa88-be8f-40c9-9cbb-2b5d9318942d/vol_6etsbdtyueaimscw
+
 Starting Container
 
-[2024-12-26 13:13:15 +0000] [1] [INFO] Starting gunicorn 20.1.0
-
-[2024-12-26 13:13:15 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
-
-[2024-12-26 13:13:15 +0000] [1] [INFO] Using worker: sync
-
-[2024-12-26 13:13:15 +0000] [4] [INFO] Booting worker with pid: 4
-
-Configurando PostgreSQL: postgresql://postgres:xlyrMBRFPdTjeMRtzxJyDIlQEwNPIDfJ@postgres.railway.internal:5432/railway
-
-[2024-12-26 13:13:52,969] ERROR in app: Exception on /api/recent-records [GET]
-
-Traceback (most recent call last):
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1771, in _execute_context
-
-    self.dialect.do_execute(
-
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 717, in do_execute
-
-    cursor.execute(statement, parameters)
-
-psycopg2.errors.UndefinedTable: relation "record" does not exist
-
-LINE 2: FROM record JOIN vehicle ON vehicle.id = record.vehicle_id O...
-
-             ^
+Certificate will not expire
 
  
 
- 
-
-The above exception was the direct cause of the following exception:
+PostgreSQL Database directory appears to contain a database; Skipping initialization
 
  
 
-Traceback (most recent call last):
+2024-12-26 12:27:41.907 UTC [5] LOG:  starting PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 2070, in wsgi_app
+2024-12-26 12:27:41.907 UTC [5] LOG:  listening on IPv4 address "0.0.0.0", port 5432
 
-    response = self.full_dispatch_request()
+2024-12-26 12:27:41.907 UTC [5] LOG:  listening on IPv6 address "::", port 5432
 
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 12:27:41.912 UTC [5] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1515, in full_dispatch_request
+2024-12-26 12:27:41.920 UTC [28] LOG:  database system was interrupted; last known up at 2024-12-26 12:11:27 UTC
 
-    rv = self.handle_user_exception(e)
+2024-12-26 12:27:41.961 UTC [28] LOG:  database system was not properly shut down; automatic recovery in progress
 
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 12:27:41.964 UTC [28] LOG:  redo starts at 0/1953520
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1513, in full_dispatch_request
+2024-12-26 12:27:41.964 UTC [28] LOG:  invalid record length at 0/1953608: expected at least 24, got 0
 
-    rv = self.dispatch_request()
+2024-12-26 12:27:41.964 UTC [28] LOG:  redo done at 0/19535D0 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
 
-         ^^^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 12:27:41.969 UTC [26] LOG:  checkpoint starting: end-of-recovery immediate wait
 
-  File "/opt/venv/lib/python3.11/site-packages/flask/app.py", line 1499, in dispatch_request
+2024-12-26 12:27:41.979 UTC [26] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.002 s, total=0.013 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/1953608, redo lsn=0/1953608
 
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+2024-12-26 12:27:41.986 UTC [5] LOG:  database system is ready to accept connections
 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 12:59:32.619 UTC [40] ERROR:  relation "record" does not exist at character 367
 
-  File "/app/app.py", line 165, in get_recent_records
+2024-12-26 12:59:32.619 UTC [40] STATEMENT:  SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
 
-    records = db.session.query(Record, Vehicle).join(Vehicle).order_by(Record.timestamp.desc()).limit(10).all()
+	FROM record JOIN vehicle ON vehicle.id = record.vehicle_id ORDER BY record.timestamp DESC 
 
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	 LIMIT 10
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2711, in all
+2024-12-26 12:59:46.784 UTC [40] ERROR:  relation "record" does not exist at character 367
 
-    return self._iter().all()
+2024-12-26 12:59:46.784 UTC [40] STATEMENT:  SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
 
-           ^^^^^^^^^^^^
+	FROM record JOIN vehicle ON vehicle.id = record.vehicle_id ORDER BY record.timestamp DESC 
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2846, in _iter
+	 LIMIT 10
 
-    result = self.session.execute(
+2024-12-26 12:59:59.797 UTC [40] ERROR:  relation "record" does not exist at character 367
 
-             ^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 12:59:59.797 UTC [40] STATEMENT:  SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1689, in execute
+	FROM record JOIN vehicle ON vehicle.id = record.vehicle_id ORDER BY record.timestamp DESC 
 
-    result = conn._execute_20(statement, params or {}, execution_options)
+	 LIMIT 10
 
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2024-12-26 13:00:16.817 UTC [40] ERROR:  relation "record" does not exist at character 367
 
-  File "/opt/venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1583, in _execute_20
+2024-12-26 13:00:16.817 UTC [40] STATEMENT:  SELECT record.id AS record_id, record.vehicle_id AS record_vehicle_id, record.record_type AS record_record_type, record.timestamp AS record_timestamp, vehicle.id AS vehicle_id, vehicle.name AS vehicle_name, vehicle.plate AS vehicle_plate, vehicle.sector AS vehicle_sector, vehicle.vehicle_type AS vehicle_vehicle_type, vehicle.created_at AS vehicle_created_at 
