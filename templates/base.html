@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portaria GPS - Sistema de Controle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-parking me-2"></i>Portaria GPS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i>Início
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/vehicles">
+                            <i class="fas fa-car me-1"></i>Veículos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar me-1"></i>Relatórios
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Função para identificar e estilizar placas
+        function stylizePlate(plate) {
+            // Remove qualquer formatação anterior
+            plate.classList.remove('antiga', 'mercosul');
+            
+            // Pega o texto da placa
+            const plateText = plate.textContent.trim();
+            
+            // Verifica o formato da placa
+            const isMercosul = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(plateText);
+            const isAntiga = /^[A-Z]{3}-?[0-9]{4}$/.test(plateText);
+            
+            if (isMercosul) {
+                plate.classList.add('mercosul');
+                // Adiciona a bandeira do Brasil
+                if (!plate.querySelector('.flag')) {
+                    const flag = document.createElement('div');
+                    flag.className = 'flag';
+                    plate.appendChild(flag);
+                }
+            } else if (isAntiga) {
+                plate.classList.add('antiga');
+            }
+        }
+
+        // Função para estilizar todas as placas na página
+        function stylizeAllPlates() {
+            document.querySelectorAll('.plate-display').forEach(stylizePlate);
+        }
+
+        // Estiliza as placas quando a página carrega
+        document.addEventListener('DOMContentLoaded', stylizeAllPlates);
+
+        // Observa mudanças no DOM para estilizar novas placas
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    stylizeAllPlates();
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+    <script>
+        // Função para converter inputs para maiúsculas
+        function setupUppercaseInputs() {
+            // Seleciona todos os inputs de texto e search, exceto campos específicos
+            document.querySelectorAll('input[type="text"], input[type="search"]').forEach(input => {
+                // Adiciona a classe uppercase-input
+                input.classList.add('uppercase-input');
+                
+                // Adiciona o evento de input
+                input.addEventListener('input', function(e) {
+                    this.value = this.value.toUpperCase();
+                });
+            });
+        }
+
+        // Executa quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            setupUppercaseInputs();
+            
+            // Observa mudanças no DOM para inputs adicionados dinamicamente
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length) {
+                        setupUppercaseInputs();
+                    }
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

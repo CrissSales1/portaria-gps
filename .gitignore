@@ -1,0 +1,29 @@
+# Banco de dados
+*.db
+*.sqlite3
+
+# Ambiente virtual
+venv/
+env/
+.env
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Arquivos de backup
+backup_*.json

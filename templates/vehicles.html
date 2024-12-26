@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card fade-in">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-car me-2"></i>Gerenciamento de Veículos</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#vehicleModal">
+                    <i class="fas fa-plus me-2"></i>Novo Veículo
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="vehicleSearch" class="form-control" 
+                               placeholder="Buscar por placa ou nome">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-car me-2"></i>Placa</th>
+                                <th><i class="fas fa-user me-2"></i>Nome</th>
+                                <th><i class="fas fa-building me-2"></i>Setor</th>
+                                <th><i class="fas fa-tag me-2"></i>Tipo</th>
+                                <th><i class="fas fa-cog me-2"></i>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehiclesList">
+                            <!-- Vehicles will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-car me-2"></i>Cadastro de Veículo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="vehicleForm">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user me-2"></i>Nome
+                        </label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-car me-2"></i>Placa
+                        </label>
+                        <input type="text" class="form-control" id="plate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-building me-2"></i>Setor
+                        </label>
+                        <input type="text" class="form-control" id="sector" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-2"></i>Tipo de Veículo
+                        </label>
+                        <select class="form-control" id="vehicleType" required>
+                            <option value="carro">Carro</option>
+                            <option value="moto">Moto</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="saveVehicle">
+                    <i class="fas fa-save me-2"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vehiclesList = document.getElementById('vehiclesList');
+    const vehicleSearch = document.getElementById('vehicleSearch');
+    const saveVehicleBtn = document.getElementById('saveVehicle');
+    const vehicleModal = new bootstrap.Modal(document.getElementById('vehicleModal'));
+    let currentVehicleId = null;
+
+    async function loadVehicles() {
+        try {
+            const response = await fetch('/api/vehicles');
+            const vehicles = await response.json();
+            displayVehicles(vehicles);
+        } catch (error) {
+            console.error('Error loading vehicles:', error);
+            alert('❌ Erro ao carregar veículos. Tente novamente.');
+        }
+    }
+
+    function displayVehicles(vehicles) {
+        vehiclesList.innerHTML = vehicles.map(vehicle => `
+            <tr class="fade-in">
+                <td>
+                    <strong class="plate-display">${vehicle.plate}</strong>
+                </td>
+                <td>${vehicle.name}</td>
+                <td>${vehicle.sector}</td>
+                <td>
+                    <span class="badge bg-info">
+                        <i class="fas fa-${vehicle.vehicle_type === 'carro' ? 'car' : 'motorcycle'} me-1"></i>
+                        ${vehicle.vehicle_type}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-warning edit-vehicle me-1" 
+                            data-vehicle='${JSON.stringify(vehicle)}'>
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-vehicle" 
+                            data-id="${vehicle.id}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Adicionar event listeners para os botões de edição e exclusão
+        document.querySelectorAll('.edit-vehicle').forEach(button => {
+            button.addEventListener('click', function() {
+                const vehicle = JSON.parse(this.dataset.vehicle);
+                currentVehicleId = vehicle.id;
+                document.getElementById('name').value = vehicle.name;
+                document.getElementById('plate').value = vehicle.plate;
+                document.getElementById('sector').value = vehicle.sector;
+                document.getElementById('vehicleType').value = vehicle.vehicle_type;
+                vehicleModal.show();
+            });
+        });
+
+        document.querySelectorAll('.delete-vehicle').forEach(button => {
+            button.addEventListener('click', async function() {
+                if (confirm('⚠️ Tem certeza que deseja excluir este veículo?')) {
+                    try {
+                        const response = await fetch(`/api/vehicles/${this.dataset.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (response.ok) {
+                            alert('✅ Veículo excluído com sucesso!');
+                            loadVehicles();
+                        } else {
+                            alert('❌ Erro ao excluir veículo. Tente novamente.');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting vehicle:', error);
+                        alert('❌ Erro ao excluir veículo. Tente novamente.');
+                    }
+                }
+            });
+        });
+    }
+
+    saveVehicleBtn.addEventListener('click', async function() {
+        const vehicleData = {
+            name: document.getElementById('name').value,
+            plate: document.getElementById('plate').value.trim().toUpperCase(),
+            sector: document.getElementById('sector').value,
+            vehicle_type: document.getElementById('vehicleType').value
+        };
+
+        try {
+            const url = currentVehicleId ? 
+                `/api/vehicles/${currentVehicleId}` : 
+                '/api/vehicles';
+            
+            const method = currentVehicleId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vehicleData)
+            });
+
+            if (response.ok) {
+                alert('✅ Veículo salvo com sucesso!');
+                vehicleModal.hide();
+                document.getElementById('vehicleForm').reset();
+                currentVehicleId = null;
+                loadVehicles();
+            } else {
+                const data = await response.json();
+                alert(`❌ Erro ao salvar veículo: ${data.error || 'Tente novamente.'}`);
+            }
+        } catch (error) {
+            console.error('Error saving vehicle:', error);
+            alert('❌ Erro ao salvar veículo. Tente novamente.');
+        }
+    });
+
+    // Converte input de placa para maiúsculas enquanto digita
+    document.getElementById('plate').addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase();
+    });
+
+    // Limpar o ID do veículo atual quando o modal for fechado
+    document.getElementById('vehicleModal').addEventListener('hidden.bs.modal', function () {
+        currentVehicleId = null;
+        document.getElementById('vehicleForm').reset();
+    });
+
+    vehicleSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = vehiclesList.getElementsByTagName('tr');
+        
+        Array.from(rows).forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Carregar veículos inicialmente
+    loadVehicles();
+});
+</script>
+{% endblock %}

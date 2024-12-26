@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card fade-in">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-bar me-2"></i>Relatórios de Movimentação</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i class="fas fa-calendar me-1"></i>Data Inicial
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="date" id="startDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i class="fas fa-calendar me-1"></i>Data Final
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="date" id="endDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i class="fas fa-filter me-1"></i>Tipo de Registro
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-exchange-alt"></i>
+                            </span>
+                            <select class="form-control" id="recordType">
+                                <option value="todos">Todos</option>
+                                <option value="entrada">Somente Entradas</option>
+                                <option value="saída">Somente Saídas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i class="fas fa-search me-1"></i>Buscar
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" id="searchFilter" class="form-control" 
+                                   placeholder="Placa ou nome...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <button class="btn btn-primary" id="searchButton">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <button class="btn btn-danger" id="clearButton">
+                                <i class="fas fa-trash-alt me-2"></i>Limpar Registros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="stats-card entries">
+                            <h5><i class="fas fa-sign-in-alt me-2"></i>Total de Entradas</h5>
+                            <p id="totalEntries">0</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stats-card exits">
+                            <h5><i class="fas fa-sign-out-alt me-2"></i>Total de Saídas</h5>
+                            <p id="totalExits">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-clock me-2"></i>Data/Hora</th>
+                                <th><i class="fas fa-car me-2"></i>Placa</th>
+                                <th><i class="fas fa-user me-2"></i>Nome</th>
+                                <th><i class="fas fa-building me-2"></i>Setor</th>
+                                <th><i class="fas fa-exchange-alt me-2"></i>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportData">
+                            <!-- Report data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    const recordType = document.getElementById('recordType');
+    const searchButton = document.getElementById('searchButton');
+    const clearButton = document.getElementById('clearButton');
+    const reportData = document.getElementById('reportData');
+    const totalEntries = document.getElementById('totalEntries');
+    const totalExits = document.getElementById('totalExits');
+    const searchFilter = document.getElementById('searchFilter');
+
+    let currentRecords = []; // Armazena os registros atuais
+
+    // Definir data inicial como início do mês atual
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    startDate.value = firstDay.toISOString().split('T')[0];
+    endDate.value = today.toISOString().split('T')[0];
+
+    function updateTable(records) {
+        let entries = 0;
+        let exits = 0;
+
+        reportData.innerHTML = records.map(record => {
+            if (record.record_type === 'entrada') entries++;
+            else exits++;
+
+            return `
+                <tr class="fade-in">
+                    <td>
+                        <i class="fas fa-clock me-2 text-muted"></i>
+                        ${record.timestamp}
+                    </td>
+                    <td>
+                        <strong class="plate-display">${record.plate}</strong>
+                    </td>
+                    <td>${record.name}</td>
+                    <td>${record.sector}</td>
+                    <td>
+                        <span class="badge ${record.record_type === 'entrada' ? 'bg-success' : 'bg-danger'}">
+                            <i class="fas fa-${record.record_type === 'entrada' ? 'sign-in-alt' : 'sign-out-alt'} me-1"></i>
+                            ${record.record_type}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        totalEntries.textContent = entries;
+        totalExits.textContent = exits;
+    }
+
+    function filterRecords() {
+        const searchTerm = searchFilter.value.toLowerCase().trim();
+        if (!searchTerm) {
+            updateTable(currentRecords);
+            return;
+        }
+        
+        const filteredRecords = currentRecords.filter(record => 
+            record.plate.toLowerCase().includes(searchTerm) || 
+            record.name.toLowerCase().includes(searchTerm)
+        );
+        updateTable(filteredRecords);
+    }
+
+    async function loadReport() {
+        const start = startDate.value;
+        const end = endDate.value;
+        const type = recordType.value;
+
+        try {
+            const response = await fetch(`/api/reports?start_date=${start}&end_date=${end}&record_type=${type}`);
+            currentRecords = await response.json();
+            filterRecords(); // Aplica o filtro atual aos novos registros
+        } catch (error) {
+            console.error('Erro ao carregar relatório:', error);
+            alert('❌ Erro ao carregar relatório. Tente novamente.');
+        }
+    }
+
+    // Event Listeners
+    searchButton.addEventListener('click', loadReport);
+    searchFilter.addEventListener('input', filterRecords);
+    recordType.addEventListener('change', loadReport);
+
+    clearButton.addEventListener('click', async function() {
+        if (confirm('⚠️ Tem certeza que deseja limpar todos os registros? Esta ação não pode ser desfeita.')) {
+            try {
+                const response = await fetch('/api/clear-records', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('✅ Registros limpos com sucesso!');
+                    loadReport();
+                } else {
+                    alert('❌ Erro ao limpar registros. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Erro ao limpar registros:', error);
+                alert('❌ Erro ao limpar registros. Tente novamente.');
+            }
+        }
+    });
+
+    // Carregar relatório inicial
+    loadReport();
+});
+</script>
+{% endblock %}

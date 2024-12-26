@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card fade-in">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-clipboard-check me-2"></i>Registro de Entrada/Saída</h2>
+            </div>
+            <div class="card-body">
+                <div class="search-container">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="plate" class="form-control form-control-lg" 
+                               placeholder="Digite a placa do veículo" autocomplete="off">
+                    </div>
+                    <div id="searchSuggestions" class="suggestions-container"></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    <button id="entryButton" class="btn btn-success btn-lg" disabled>
+                        <i class="fas fa-sign-in-alt me-2"></i>Entrada
+                    </button>
+                    <button id="exitButton" class="btn btn-danger btn-lg" disabled>
+                        <i class="fas fa-sign-out-alt me-2"></i>Saída
+                    </button>
+                </div>
+
+                <div class="mt-5">
+                    <h3 class="mb-4">
+                        <i class="fas fa-history me-2"></i>Últimos Registros
+                    </h3>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-clock me-2"></i>Data/Hora</th>
+                                    <th><i class="fas fa-car me-2"></i>Placa</th>
+                                    <th><i class="fas fa-user me-2"></i>Nome</th>
+                                    <th><i class="fas fa-building me-2"></i>Setor</th>
+                                    <th><i class="fas fa-exchange-alt me-2"></i>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentRecords">
+                                <!-- Recent records will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Register Modal -->
+<div class="modal fade" id="quickRegisterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-car me-2"></i>Cadastro Rápido de Veículo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickRegisterForm">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-car me-2"></i>Placa
+                        </label>
+                        <input type="text" class="form-control" id="quickPlate" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user me-2"></i>Nome
+                        </label>
+                        <input type="text" class="form-control" id="quickName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-building me-2"></i>Setor
+                        </label>
+                        <input type="text" class="form-control" id="quickSector" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-2"></i>Tipo de Veículo
+                        </label>
+                        <select class="form-control" id="quickVehicleType" required>
+                            <option value="carro">Carro</option>
+                            <option value="moto">Moto</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="registerAndEntry">
+                    <i class="fas fa-sign-in-alt me-2"></i>Registrar Entrada
+                </button>
+                <button type="button" class="btn btn-danger" id="registerAndExit">
+                    <i class="fas fa-sign-out-alt me-2"></i>Registrar Saída
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const plateSearch = document.getElementById('plate');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    const entryButton = document.getElementById('entryButton');
+    const exitButton = document.getElementById('exitButton');
+    const quickRegisterModal = new bootstrap.Modal(document.getElementById('quickRegisterModal'));
+    const quickRegisterModalElement = document.getElementById('quickRegisterModal');
+    const registerAndEntryBtn = document.getElementById('registerAndEntry');
+    const registerAndExitBtn = document.getElementById('registerAndExit');
+
+    let selectedVehicle = null;
+    let searchTimeout = null;
+
+    // Garante que o foco seja mantido no campo nome quando o modal abrir
+    quickRegisterModalElement.addEventListener('shown.bs.modal', function () {
+        const nameInput = document.getElementById('quickName');
+        // Limpa o valor anterior
+        nameInput.value = '';
+        // Força o foco múltiplas vezes para garantir
+        setTimeout(() => {
+            nameInput.focus();
+            // Tenta focar novamente após um breve intervalo
+            setTimeout(() => {
+                nameInput.focus();
+            }, 100);
+        }, 200);
+    });
+
+    // Converte input de placa para maiúsculas enquanto digita
+    plateSearch.addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase();
+    });
+
+    // Função para selecionar veículo (definida no escopo global)
+    window.selectVehicle = function(vehicle) {
+        selectedVehicle = vehicle;
+        plateSearch.value = vehicle.plate;
+        searchSuggestions.innerHTML = '';
+        
+        // Habilita os botões
+        document.getElementById('entryButton').disabled = false;
+        document.getElementById('exitButton').disabled = false;
+    };
+
+    // Função para abrir modal de cadastro rápido (definida no escopo global)
+    window.openQuickRegisterModal = function(plate) {
+        document.getElementById('quickPlate').value = plate;
+        searchSuggestions.innerHTML = '';
+        quickRegisterModal.show();
+    };
+
+    // Função para mostrar sugestões de veículos
+    async function showSuggestions(query) {
+        if (!query) {
+            searchSuggestions.innerHTML = '';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/vehicles/search?q=${encodeURIComponent(query)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const vehicles = await response.json();
+            
+            if (vehicles.length > 0) {
+                searchSuggestions.innerHTML = vehicles.map(vehicle => `
+                    <div class="suggestion-item" onclick="selectVehicle(${JSON.stringify(vehicle).replace(/"/g, '&quot;')})">
+                        <div class="plate-display ${vehicle.plate.length === 7 ? 'mercosul' : 'antiga'}">
+                            ${vehicle.plate}
+                            ${vehicle.plate.length === 7 ? '<div class="flag"></div>' : ''}
+                        </div>
+                        <div>
+                            <strong>${vehicle.name}</strong>
+                            <small class="text-muted">(${vehicle.sector})</small>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                searchSuggestions.innerHTML = `
+                    <div class="suggestion-item">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <div>
+                                <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                                Nenhum veículo encontrado com esta placa
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="openQuickRegisterModal('${query}')">
+                                <i class="fas fa-plus me-2"></i>Cadastrar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Erro ao buscar veículos:', error);
+            searchSuggestions.innerHTML = `
+                <div class="suggestion-item text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Erro ao buscar veículos
+                </div>
+            `;
+        }
+    }
+
+    // Evento de digitação no campo de busca
+    plateSearch.addEventListener('input', function() {
+        const query = this.value.trim().toUpperCase();
+        clearTimeout(searchTimeout);
+
+        // Limpa as sugestões se o campo estiver vazio
+        if (!query) {
+            searchSuggestions.innerHTML = '';
+            return;
+        }
+
+        // Espera 300ms após o último caractere digitado para fazer a busca
+        searchTimeout = setTimeout(() => showSuggestions(query), 300);
+    });
+
+    async function loadRecentRecords() {
+        try {
+            const response = await fetch('/api/recent-records');
+            const records = await response.json();
+            
+            document.getElementById('recentRecords').innerHTML = records.map(record => `
+                <tr class="fade-in">
+                    <td>
+                        <i class="fas fa-clock me-2 text-muted"></i>
+                        ${record.timestamp}
+                    </td>
+                    <td>
+                        <strong class="plate-display">${record.plate}</strong>
+                    </td>
+                    <td>${record.name}</td>
+                    <td>${record.sector}</td>
+                    <td>
+                        <span class="badge ${record.record_type === 'entrada' ? 'bg-success' : 'bg-danger'}">
+                            <i class="fas fa-${record.record_type === 'entrada' ? 'sign-in-alt' : 'sign-out-alt'} me-1"></i>
+                            ${record.record_type}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Erro ao carregar registros recentes:', error);
+        }
+    }
+
+    async function registerAndRecord(recordType) {
+        const vehicleData = {
+            name: document.getElementById('quickName').value,
+            plate: document.getElementById('quickPlate').value,
+            sector: document.getElementById('quickSector').value,
+            vehicle_type: document.getElementById('quickVehicleType').value
+        };
+
+        try {
+            // Primeiro registra o veículo
+            const vehicleResponse = await fetch('/api/vehicles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vehicleData)
+            });
+
+            if (vehicleResponse.ok) {
+                // Depois registra a entrada/saída
+                const recordResponse = await fetch('/api/records', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        plate: vehicleData.plate,
+                        record_type: recordType
+                    })
+                });
+
+                if (recordResponse.ok) {
+                    const message = recordType === 'entrada' ? 'Entrada' : 'Saída';
+                    const icon = recordType === 'entrada' ? '✅' : '🚗';
+                    alert(`${icon} Veículo cadastrado e ${message.toLowerCase()} registrada com sucesso!`);
+                    quickRegisterModal.hide();
+                    document.getElementById('quickRegisterForm').reset();
+                    plateSearch.value = '';
+                    selectedVehicle = null;
+                    loadRecentRecords();
+                } else {
+                    throw new Error('Erro ao registrar movimentação');
+                }
+            } else {
+                throw new Error('Erro ao cadastrar veículo');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Erro ao processar operação. Tente novamente.');
+        }
+    }
+
+    async function registerRecord(type) {
+        if (!selectedVehicle) {
+            alert('Por favor, selecione um veículo primeiro.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/records', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    plate: selectedVehicle.plate,
+                    record_type: type
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao registrar movimento');
+            }
+
+            // Limpa o campo e desabilita os botões
+            plateSearch.value = '';
+            selectedVehicle = null;
+            document.getElementById('entryButton').disabled = true;
+            document.getElementById('exitButton').disabled = true;
+
+            // Atualiza a lista de registros recentes
+            await loadRecentRecords();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao registrar movimento. Por favor, tente novamente.');
+        }
+    }
+
+    // Adiciona os event listeners para os botões
+    document.getElementById('entryButton').addEventListener('click', () => registerRecord('ENTRADA'));
+    document.getElementById('exitButton').addEventListener('click', () => registerRecord('SAIDA'));
+    registerAndEntryBtn.addEventListener('click', () => registerAndRecord('entrada'));
+    registerAndExitBtn.addEventListener('click', () => registerAndRecord('saída'));
+
+    // Limpar o formulário quando o modal for fechado
+    document.getElementById('quickRegisterModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('quickRegisterForm').reset();
+    });
+
+    // Fechar sugestões ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!searchSuggestions.contains(e.target) && e.target !== plateSearch) {
+            searchSuggestions.innerHTML = '';
+        }
+    });
+
+    // Carregar registros iniciais e configurar atualização automática
+    loadRecentRecords();
+    setInterval(loadRecentRecords, 30000);
+});
+</script>
+{% endblock %}
