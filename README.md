@@ -31,7 +31,7 @@ Sistema web para controle de entrada e saída de veículos, desenvolvido com Fla
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/portaria-gps.git
+git clone https://github.com/CrissSales1/portaria-gps.git
 cd portaria-gps
 ```
 
@@ -92,4 +92,4 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## Suporte
 
-Para reportar bugs ou solicitar novas funcionalidades, por favor abra uma [issue](https://github.com/seu-usuario/portaria-gps/issues).
+Para reportar bugs ou solicitar novas funcionalidades, por favor abra uma [issue](https://github.com/CrissSales1/portaria-gps/issues).
