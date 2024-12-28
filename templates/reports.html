@@ -41,8 +41,8 @@
                             </span>
                             <select class="form-control" id="recordType">
                                 <option value="todos">Todos</option>
-                                <option value="entrada">Somente Entradas</option>
-                                <option value="saída">Somente Saídas</option>
+                                <option value="ENTRADA">Somente Entradas</option>
+                                <option value="SAÍDA">Somente Saídas</option>
                             </select>
                         </div>
                     </div>
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let exits = 0;
 
         reportData.innerHTML = records.map(record => {
-            if (record.record_type === 'entrada') entries++;
+            if (record.record_type === 'ENTRADA') entries++;
             else exits++;
 
             return `
@@ -155,8 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${record.name}</td>
                     <td>${record.sector}</td>
                     <td>
-                        <span class="badge ${record.record_type === 'entrada' ? 'bg-success' : 'bg-danger'}">
-                            <i class="fas fa-${record.record_type === 'entrada' ? 'sign-in-alt' : 'sign-out-alt'} me-1"></i>
+                        <span class="badge ${record.record_type === 'ENTRADA' ? 'bg-success' : 'bg-danger'}">
+                            <i class="fas fa-${record.record_type === 'ENTRADA' ? 'sign-in-alt' : 'sign-out-alt'} me-1"></i>
                             ${record.record_type}
                         </span>
                     </td>

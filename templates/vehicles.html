@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
+<div class="row justify-content-center">
+    <div class="col-md-10">
         <div class="card fade-in">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-car me-2"></i>Gerenciamento de Veículos</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#vehicleModal">
-                    <i class="fas fa-plus me-2"></i>Novo Veículo
-                </button>
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-car me-2"></i>Veículos Cadastrados</h2>
+                    <div>
+                        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-file-excel me-2"></i>Importar Excel
+                        </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#vehicleModal">
+                            <i class="fas fa-plus me-2"></i>Novo Veículo
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="mb-4">
@@ -35,6 +42,16 @@
                             <!-- Vehicles will be populated here -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>Para importar veículos em massa, use um arquivo Excel com as colunas: Placa, Nome, Setor e Tipo
+                    </small>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#clearDbModal">
+                        <i class="fas fa-trash-alt me-2"></i>Limpar Banco de Dados
+                    </button>
                 </div>
             </div>
         </div>
@@ -93,6 +110,79 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Importação Excel -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-excel me-2"></i>Importar Veículos do Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-file me-2"></i>Arquivo Excel
+                        </label>
+                        <input type="file" class="form-control" id="excelFile" accept=".xlsx" required>
+                        <small class="text-muted">
+                            O arquivo deve ter as colunas: Placa, Nome, Setor e Tipo
+                        </small>
+                    </div>
+                </form>
+                <div class="progress d-none mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
+                </div>
+                <div id="importResults" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" id="importButton" class="btn btn-success">
+                    <i class="fas fa-upload me-2"></i>Importar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Database Modal -->
+<div class="modal fade" id="clearDbModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Limpar Banco de Dados
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Atenção!</h5>
+                    <p>Esta ação irá:</p>
+                    <ul>
+                        <li>Excluir <strong>TODOS</strong> os veículos cadastrados</li>
+                        <li>Excluir <strong>TODOS</strong> os registros de entrada/saída</li>
+                        <li>Esta ação <strong>NÃO</strong> pode ser desfeita</li>
+                    </ul>
+                    <p class="mb-0">Tem certeza que deseja continuar?</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" id="clearDbButton" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Sim, Limpar Tudo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -111,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             displayVehicles(vehicles);
         } catch (error) {
             console.error('Error loading vehicles:', error);
-            alert('❌ Erro ao carregar veículos. Tente novamente.');
+            alert(' Erro ao carregar veículos. Tente novamente.');
         }
     }
 
@@ -157,20 +247,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.querySelectorAll('.delete-vehicle').forEach(button => {
             button.addEventListener('click', async function() {
-                if (confirm('⚠️ Tem certeza que deseja excluir este veículo?')) {
+                if (confirm(' Tem certeza que deseja excluir este veículo?')) {
                     try {
                         const response = await fetch(`/api/vehicles/${this.dataset.id}`, {
                             method: 'DELETE'
                         });
                         if (response.ok) {
-                            alert('✅ Veículo excluído com sucesso!');
+                            alert(' Veículo excluído com sucesso!');
                             loadVehicles();
                         } else {
-                            alert('❌ Erro ao excluir veículo. Tente novamente.');
+                            alert(' Erro ao excluir veículo. Tente novamente.');
                         }
                     } catch (error) {
                         console.error('Error deleting vehicle:', error);
-                        alert('❌ Erro ao excluir veículo. Tente novamente.');
+                        alert(' Erro ao excluir veículo. Tente novamente.');
                     }
                 }
             });
@@ -201,18 +291,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.ok) {
-                alert('✅ Veículo salvo com sucesso!');
+                alert(' Veículo salvo com sucesso!');
                 vehicleModal.hide();
                 document.getElementById('vehicleForm').reset();
                 currentVehicleId = null;
                 loadVehicles();
             } else {
                 const data = await response.json();
-                alert(`❌ Erro ao salvar veículo: ${data.error || 'Tente novamente.'}`);
+                alert(` Erro ao salvar veículo: ${data.error || 'Tente novamente.'}`);
             }
         } catch (error) {
             console.error('Error saving vehicle:', error);
-            alert('❌ Erro ao salvar veículo. Tente novamente.');
+            alert(' Erro ao salvar veículo. Tente novamente.');
         }
     });
 
@@ -239,6 +329,112 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Carregar veículos inicialmente
     loadVehicles();
+
+    // Importação de Excel
+    const importButton = document.getElementById('importButton');
+    const excelFile = document.getElementById('excelFile');
+    const importResults = document.getElementById('importResults');
+    const progressBar = document.querySelector('.progress');
+    const progressBarInner = document.querySelector('.progress-bar');
+    const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+
+    importButton.addEventListener('click', async function() {
+        if (!excelFile.files.length) {
+            alert('Por favor, selecione um arquivo Excel.');
+            return;
+        }
+
+        const file = excelFile.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Mostra a barra de progresso
+        progressBar.classList.remove('d-none');
+        progressBarInner.style.width = '0%';
+        importResults.classList.add('d-none');
+        importButton.disabled = true;
+
+        try {
+            const response = await fetch('/api/import_vehicles', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                importResults.className = 'alert alert-success';
+                importResults.innerHTML = `
+                    <h5><i class="fas fa-check-circle me-2"></i>Importação concluída!</h5>
+                    <p class="mb-0">
+                        <strong>${result.imported}</strong> veículos importados com sucesso.<br>
+                        ${result.duplicates ? `<strong>${result.duplicates}</strong> veículos ignorados (placas duplicadas).<br>` : ''}
+                        ${result.errors ? `<strong>${result.errors}</strong> erros encontrados.` : ''}
+                    </p>
+                `;
+                
+                // Atualiza a lista de veículos
+                loadVehicles();
+                
+                // Limpa o input de arquivo
+                excelFile.value = '';
+                
+                // Fecha o modal após 3 segundos
+                setTimeout(() => {
+                    importModal.hide();
+                    importResults.classList.add('d-none');
+                    progressBar.classList.add('d-none');
+                }, 3000);
+            } else {
+                throw new Error(result.error || 'Erro ao importar veículos');
+            }
+        } catch (error) {
+            importResults.className = 'alert alert-danger';
+            importResults.innerHTML = `
+                <h5><i class="fas fa-exclamation-triangle me-2"></i>Erro na importação</h5>
+                <p class="mb-0">${error.message}</p>
+            `;
+        } finally {
+            importResults.classList.remove('d-none');
+            progressBarInner.style.width = '100%';
+            importButton.disabled = false;
+        }
+    });
+
+    // Limpa os resultados quando o modal é fechado
+    document.getElementById('importModal').addEventListener('hidden.bs.modal', function() {
+        importResults.classList.add('d-none');
+        progressBar.classList.add('d-none');
+        excelFile.value = '';
+        importButton.disabled = false;
+    });
+
+    // Limpar Banco de Dados
+    const clearDbButton = document.getElementById('clearDbButton');
+    const clearDbModal = new bootstrap.Modal(document.getElementById('clearDbModal'));
+
+    clearDbButton.addEventListener('click', async function() {
+        try {
+            clearDbButton.disabled = true;
+            const response = await fetch('/api/clear_database', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                alert('✅ Banco de dados limpo com sucesso!');
+                clearDbModal.hide();
+                loadVehicles();
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || 'Erro ao limpar banco de dados');
+            }
+        } catch (error) {
+            console.error('Error clearing database:', error);
+            alert('❌ ' + error.message);
+        } finally {
+            clearDbButton.disabled = false;
+        }
+    });
 });
 </script>
 {% endblock %}

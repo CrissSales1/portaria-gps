@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import pytz
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -153,18 +154,25 @@ def delete_vehicle(vehicle_id):
 def add_record():
     try:
         data = request.json
-        plate = data.get('plate', '').strip().upper()
-        record_type = data.get('type', '').strip().upper()
+        vehicle_id = data.get('vehicle_id')
+        record_type = data.get('record_type', '').strip()
 
-        if not plate or not record_type:
-            return jsonify({'error': 'Placa e tipo são obrigatórios'}), 400
+        # Validação e normalização do tipo de registro
+        if record_type.upper() not in ['ENTRADA', 'SAÍDA']:
+            return jsonify({'error': 'Tipo de registro inválido'}), 400
 
-        vehicle = Vehicle.query.filter_by(plate=plate).first()
+        # Garante que o tipo está correto
+        record_type = 'ENTRADA' if record_type.upper() == 'ENTRADA' else 'SAÍDA'
+
+        if not vehicle_id or not record_type:
+            return jsonify({'error': 'ID do veículo e tipo são obrigatórios'}), 400
+
+        vehicle = Vehicle.query.get(vehicle_id)
         if not vehicle:
             return jsonify({'error': 'Veículo não encontrado'}), 404
 
         record = Record(
-            vehicle_id=vehicle.id,
+            vehicle_id=vehicle_id,
             record_type=record_type,
             timestamp=get_current_time()  # Usa o horário local
         )
@@ -252,6 +260,29 @@ def clear_records():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/clear_database', methods=['POST'])
+def clear_database():
+    try:
+        # Exclui todos os registros
+        Record.query.delete()
+        
+        # Exclui todos os veículos
+        Vehicle.query.delete()
+        
+        # Commit das alterações
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Banco de dados limpo com sucesso'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao limpar banco de dados: {str(e)}")
+        return jsonify({
+            'error': 'Erro ao limpar banco de dados'
+        }), 500
+
 @app.route('/reports')
 def reports():
     return render_template('reports.html')
@@ -305,6 +336,82 @@ def search_vehicles():
         'sector': v.sector,
         'vehicle_type': v.vehicle_type
     } for v in vehicles])
+
+@app.route('/api/import_vehicles', methods=['POST'])
+def import_vehicles():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Nenhum arquivo enviado'}), 400
+        
+        file = request.files['file']
+        if not file.filename.endswith('.xlsx'):
+            return jsonify({'error': 'Formato de arquivo inválido. Use .xlsx'}), 400
+
+        # Lê o arquivo Excel
+        df = pd.read_excel(file)
+        
+        # Verifica as colunas necessárias
+        required_columns = ['Placa', 'Nome', 'Setor', 'Tipo']
+        if not all(col in df.columns for col in required_columns):
+            return jsonify({'error': 'Arquivo Excel inválido. Verifique as colunas necessárias.'}), 400
+
+        # Inicializa contadores
+        imported = 0
+        duplicates = 0
+        errors = 0
+
+        # Processa cada linha
+        for _, row in df.iterrows():
+            try:
+                plate = str(row['Placa']).strip().upper()
+                name = str(row['Nome']).strip().upper()
+                sector = str(row['Setor']).strip().upper()
+                vehicle_type = str(row['Tipo']).strip().lower()
+
+                # Validações
+                if not plate or not name:
+                    errors += 1
+                    continue
+
+                # Normaliza o tipo de veículo
+                if vehicle_type not in ['carro', 'moto']:
+                    vehicle_type = 'carro'  # valor padrão
+
+                # Verifica se já existe um veículo com essa placa
+                existing_vehicle = Vehicle.query.filter_by(plate=plate).first()
+                if existing_vehicle:
+                    duplicates += 1
+                    continue
+
+                # Cria o novo veículo
+                vehicle = Vehicle(
+                    plate=plate,
+                    name=name,
+                    sector=sector,
+                    vehicle_type=vehicle_type
+                )
+                db.session.add(vehicle)
+                imported += 1
+
+            except Exception as e:
+                print(f"Erro ao processar linha: {str(e)}")
+                errors += 1
+                continue
+
+        # Commit das alterações
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Importação concluída com sucesso',
+            'imported': imported,
+            'duplicates': duplicates,
+            'errors': errors
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro na importação: {str(e)}")
+        return jsonify({'error': 'Erro ao processar arquivo'}), 500
 
 if __name__ == '__main__':
     # Em desenvolvimento, use debug=True
