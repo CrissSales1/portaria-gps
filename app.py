@@ -7,6 +7,9 @@ import pandas as pd
 
 app = Flask(__name__)
 
+# Configuração do fuso horário
+TIMEZONE = pytz.timezone('America/Sao_Paulo')
+
 # Configuração do banco de dados
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
@@ -16,8 +19,9 @@ if DATABASE_URL:
     print(f"Configurando PostgreSQL: {DATABASE_URL}")
 else:
     # Desenvolvimento local, usar SQLite
-    DATABASE_URL = 'sqlite:///instance/parking.db'
-    print("Configurando SQLite")
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    DATABASE_URL = f'sqlite:///{os.path.join(basedir, "instance", "parking.db")}'
+    print("Configurando SQLite:", DATABASE_URL)
 
 # Configuração do Flask
 app.config.update(
@@ -28,9 +32,6 @@ app.config.update(
 
 # Inicializa o SQLAlchemy
 db = SQLAlchemy(app)
-
-# Configuração do fuso horário
-TIMEZONE = pytz.timezone('America/Sao_Paulo')
 
 def get_current_time():
     """Retorna o horário atual no fuso horário correto"""
@@ -105,15 +106,6 @@ def add_vehicle():
         )
 
         db.session.add(vehicle)
-        db.session.commit()
-
-        # Cria um registro de entrada com o horário local
-        record = Record(
-            vehicle_id=vehicle.id, 
-            record_type='ENTRADA',
-            timestamp=get_current_time()
-        )
-        db.session.add(record)
         db.session.commit()
 
         return jsonify(vehicle.to_dict()), 201
@@ -197,7 +189,7 @@ def get_records():
 
         # Query base
         query = db.session.query(Record, Vehicle).join(Vehicle)
-
+        
         # Aplica filtros
         if start_date:
             start = datetime.strptime(start_date, '%Y-%m-%d').replace(hour=0, minute=0, second=0)

@@ -162,48 +162,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Função para registrar entrada/saída
     async function registerRecord(vehicle, recordType) {
+        if (!vehicle) {
+            showToast('error', 'Nenhum veículo selecionado');
+            return;
+        }
+
         try {
-            console.log('Iniciando registro:', recordType, 'Veículo:', vehicle);
-            
-            const data = {
-                vehicle_id: vehicle.id,
-                plate: vehicle.plate,
-                record_type: recordType
-            };
-            
-            console.log('Enviando requisição com:', data);
-            
             const response = await fetch('/api/records', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    vehicle_id: vehicle.id,
+                    record_type: recordType
+                })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Erro ao registrar');
+                throw new Error(data.error || `Erro ao registrar ${recordType.toLowerCase()}`);
             }
 
-            const result = await response.json();
-            
-            // Atualiza a lista de registros recentes
-            loadRecentRecords();
-            
-            // Limpa o campo de busca
-            document.getElementById('searchInput').value = '';
-            
-            // Fecha o modal de registro rápido
-            const quickRegisterModal = bootstrap.Modal.getInstance(document.getElementById('quickRegisterModal'));
-            if (quickRegisterModal) {
-                quickRegisterModal.hide();
-            }
-            
-            return result;
+            // Limpa o campo de busca e mantém o foco
+            plateSearch.value = '';
+            selectedVehicle = null;
+            plateSearch.focus();
+
+            // Atualiza a lista de registros
+            await loadRecentRecords();
+
+            showToast('success', `${recordType} registrada com sucesso!`);
         } catch (error) {
             console.error('Erro:', error);
-            throw error;
+            showToast('error', error.message);
         }
     }
 
@@ -294,6 +287,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = bootstrap.Modal.getInstance(quickRegisterModal);
             if (modal) modal.hide();
             quickRegisterForm.reset();
+
+            // Limpa o campo de busca e mantém o foco
+            if (plateSearch) {
+                plateSearch.value = '';
+                selectedVehicle = null;
+                plateSearch.focus();
+            }
 
             // Mostra mensagem de sucesso
             showToast('success', 'Veículo cadastrado e ' + recordType.toLowerCase() + ' registrada com sucesso!');
